@@ -1,0 +1,87 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Base currency/Currency</th>
+      <th scope="col">Sale rate</th>
+      <th scope="col">Buy rate</th>
+        <th scope="col">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rate in rates_usd %}
+    <tr>
+      <td>{{ rate.base_currency }}/{{ rate.currency }}</td>
+      <td>{{ rate.sale_rate }}</td>
+      <td>{{ rate.buy_rate }}</td>
+      <td>{{ rate.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+    <table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Base currency/Currency</th>
+      <th scope="col">Sale rate</th>
+      <th scope="col">Buy rate</th>
+        <th scope="col">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rate in rates_eur %}
+    <tr>
+      <td>{{ rate.base_currency }}/{{ rate.currency }}</td>
+      <td>{{ rate.sale_rate }}</td>
+      <td>{{ rate.buy_rate }}</td>
+      <td>{{ rate.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+    <table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Base currency/Currency</th>
+      <th scope="col">Sale rate</th>
+      <th scope="col">Buy rate</th>
+        <th scope="col">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rate in rates_chf %}
+    <tr>
+      <td>{{ rate.base_currency }}/{{ rate.currency }}</td>
+      <td>{{ rate.sale_rate }}</td>
+      <td>{{ rate.buy_rate }}</td>
+      <td>{{ rate.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+    <table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Base currency/Currency</th>
+      <th scope="col">Sale rate</th>
+      <th scope="col">Buy rate</th>
+        <th scope="col">Date</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for rate in rates_gbp %}
+    <tr>
+      <td>{{ rate.base_currency }}/{{ rate.currency }}</td>
+      <td>{{ rate.sale_rate }}</td>
+      <td>{{ rate.buy_rate }}</td>
+      <td>{{ rate.date }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

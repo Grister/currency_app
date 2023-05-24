@@ -1,10 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-</head>
-<body>
-    <h1>Hello, world</h1>
-</body>
-</html>
+{% extends "core/base.html" %}
+
+{% block content %}
+    <button id="scrape_privat_btn" type="button" class="btn btn-primary">Download Privat Rates History</button>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#scrape_privat_btn").click(function () {
+                $.ajax({
+                    url: "{% url 'scrape_privat' %}",
+                    type: "GET",
+                    success: function (response) {
+                        console.log(response.data);
+                        alert("Data Scraped");
+                    },
+                    error: function () {
+                        alert("Error calling API");
+                    }
+                });
+            });
+        });
+    </script>
+{% endblock %}
