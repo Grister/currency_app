@@ -38,8 +38,6 @@ class PrivatRateService:
             if result != "Failed to process data":
                 self.persist_objects(result)
                 results.append(result)
-            else:
-                print("Data not in database")
         return results
 
     def get_rate(self, **kwargs):
