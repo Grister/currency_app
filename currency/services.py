@@ -1,48 +1,65 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import requests
-from datetime import date, timedelta, datetime
+from datetime import timedelta, datetime
 
 from config.settings import MAX_WORKERS
 from currency.models import ExchangeRate, ExchangeRateProvider
 
 
-class PrivatRateService:
-    API_URL = "https://api.privatbank.ua/p24api/exchange_rates"
-    CURRENCIES = ["GBP", "USD", "EUR", "CHF"]
-    NAME = 'privat'
+class ProviderService(object):
+    def __init__(self, name, api_url):
+        self.name = name
+        self.api_url = api_url
 
-    @staticmethod
-    def get_dates_from_start_of_year():
-        today = date.today()
-        start_of_year = date(today.year, 1, 1)
-        dates = []
-        for i in range((today - start_of_year).days + 1):
-            dates.append((start_of_year + timedelta(days=i)).strftime('%d.%m.%Y'))
-        return dates
+    def get_or_create(self):
+        provider, created = ExchangeRateProvider.objects.get_or_create(name=self.name, api_url=self.api_url)
+        if created:
+            print("ExchangeRateProvider created:", provider)
+        else:
+            print("Existing ExchangeRateProvider retrieved:", provider)
+        return provider
+
+
+class ExchangeRateService:
+    CURRENCIES = ["GBP", "USD", "EUR", "CHF"]
+
+    def __init__(self, provider, start_date, end_date):
+        self.provider = provider
+        self.start_date = start_date
+        self.end_date = end_date
+
+    @property
+    def num_days(self):
+        delta = self.end_date - self.start_date
+        return delta.days
+
+    @property
+    def url(self):
+        return self.provider.api_url
 
     def get_rates(self):
-        dates_list = self.get_dates_from_start_of_year()
+        delta = timedelta(days=1)
+        current = self.start_date
+
         with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
-            futures = []
+            futures = [executor.submit(self.get_rate, date=current + i * delta) for i in range(self.num_days)]
+            objects = []
+            for future in as_completed(futures):
+                currency_rates = future.result()
+                if currency_rates != "Failed to process data":
+                    for rates in currency_rates:
+                        rates["provider_id"] = self.provider.pk
+                        rate, _ = ExchangeRate.objects.get_or_create(**rates)
+                    objects.append(currency_rates)
+        return objects
 
-            for date_ in dates_list:
-                params = {
-                    'date': date_,
-                    'json': ''
-                }
-                futures.append(executor.submit(self.get_rate, **params))
-        results = []
-        for future in as_completed(futures):
-            result = future.result()
-            if result != "Failed to process data":
-                self.persist_objects(result)
-                results.append(result)
-        return results
-
-    def get_rate(self, **kwargs):
-        response = requests.get(self.API_URL, params=kwargs)
-        print(f"Date: {kwargs.get('date')} Status code: {response.status_code}")
+    def get_rate(self, date):
+        params = {
+            'date': str(date.strftime('%d.%m.%Y'))
+        }
+        response = requests.get(self.url, params=params)
+        print(f"Date: {str(date.strftime('%d.%m.%Y'))} Status code: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
             currency_rates = []
@@ -64,24 +81,3 @@ class PrivatRateService:
                 )
             return currency_rates
         return "Failed to process data"
-
-    def persist_objects(self, objects):
-        provider = ExchangeRateProvider.objects.filter(name=self.NAME).first()
-        if not provider:
-            provider = ExchangeRateProvider(name=self.NAME, api_url=self.API_URL)
-            provider.save()
-
-        for rate in objects:
-            entry = ExchangeRate.objects.filter(currency=rate.get('currency'),
-                                                date=rate.get('date'),
-                                                provider__name=self.NAME).first()
-            if not entry:
-                entry = ExchangeRate(
-                    base_currency=rate.get('base_currency'),
-                    currency=rate.get('currency'),
-                    sale_rate=rate.get('sale_rate'),
-                    buy_rate=rate.get('buy_rate'),
-                    date=rate.get('date'),
-                    provider=provider
-                )
-                entry.save()
